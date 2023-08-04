@@ -1,0 +1,471 @@
+
+
+CREATE DATABASE youtube
+    WITH 
+    OWNER = postgres
+    ENCODING = 'UTF8'
+    CONNECTION LIMIT = -1;
+
+
+//////////////////////////////////////////////
+
+
+CREATE TABLE y_user(
+userName varchar(24) NOT NULL,
+userpassword varchar(20) NOT NULL,
+registeryDate timestamp without time zone NOT NULL,
+prfilePicture integer DEFAULT 0,
+email varchar(60) NOT NULL,
+PRIMARY KEY (userName));
+
+
+////////////////////////////////////////////////////
+
+
+CREATE TABLE y_video(
+videoID SERIAL PRIMARY KEY NOT NULL,
+vName VARCHAR(100) NOT NULL,
+userName VARCHAR(24) NOT NULL,
+uploadDate TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+description VARCHAR(200) DEFAULT 'We do not have a description yet',
+duration INTEGER NOT NULL,
+thumbnailPhoto INTEGER DEFAULT 0,
+FOREIGN KEY (userName) 
+REFERENCES y_user(userName));
+
+
+///////////////////////////////////////////////////
+
+
+CREATE TABLE y_videoView(
+videoID INTEGER NOT NULL,
+userName VARCHAR(24) NOT NULL,
+viewDate TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+status VARCHAR(7) DEFAULT 'NoReact',
+PRIMARY KEY(userName, videoID),
+FOREIGN KEY (videoID) 
+REFERENCES y_video(videoID),
+FOREIGN KEY (userName) 
+REFERENCES y_user(userName),
+CHECK(status in ('NoReact','DisLike','Like')));
+
+
+/////////////////////////////////////////////////////////////
+
+
+CREATE TABLE y_comment(
+commentID SERIAL PRIMARY KEY NOT NULL,
+submissionDate TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+description VARCHAR(500) NOT NULL);
+
+
+///////////////////////////////////////////////////////////////
+
+
+CREATE TABLE y_videoViewComment(
+videoID INTEGER NOT NULL,
+userName VARCHAR(24) NOT NULL,
+commentID INTEGER NOT NULL,
+PRIMARY KEY(commentID),
+FOREIGN KEY (videoID) 
+REFERENCES y_video(videoID),
+FOREIGN KEY (userName) 
+REFERENCES y_user(userName),
+FOREIGN KEY (commentID) 
+REFERENCES y_comment(commentID));
+
+
+////////////////////////////////////////////////////////////////
+
+
+CREATE TABLE y_commentView(
+commentID INTEGER NOT NULL,
+userName VARCHAR(24) NOT NULL,
+viewDate TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+status VARCHAR(7) DEFAULT 'NoReact',
+PRIMARY KEY(userName, commentID),
+FOREIGN KEY (commentID ) 
+REFERENCES y_comment(commentID),
+FOREIGN KEY (userName) 
+REFERENCES y_user(userName),
+CHECK(status in ('NoReact','DisLike','Like')));
+
+
+/////////////////////////////////////////////////////////////
+
+
+CREATE TABLE y_replyComment(
+replyComment INTEGER NOT NULL,
+mainComment INTEGER NOT NULL,
+userName VARCHAR(24) NOT NULL,
+PRIMARY KEY(userName, replyComment, mainComment),
+FOREIGN KEY (replyComment) 
+REFERENCES y_comment(commentID),
+FOREIGN KEY (mainComment) 
+REFERENCES y_comment(commentID),
+FOREIGN KEY (userName) 
+REFERENCES y_user(userName));
+
+
+///////////////////////////////////////////////////////////////////
+
+
+CREATE TABLE channel (
+channelID SERIAL PRIMARY KEY NOT NULL,
+cName VARCHAR(100) NOT NULL,
+creator VARCHAR(24) NOT NULL,
+constructionDate TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+about VARCHAR(200) DEFAULT '',
+profilePhoto INTEGER DEFAULT 0,
+FOREIGN KEY (creator) 
+REFERENCES y_user(userName));
+
+
+/////////////////////////////////////////////////////////////////////
+
+
+CREATE TABLE channelVideo (
+videoID INTEGER PRIMARY KEY NOT NULL,
+channelID INTEGER NOT NULL,
+FOREIGN KEY (videoID) 
+REFERENCES y_video(videoID),
+FOREIGN KEY (channelID ) 
+REFERENCES channel(channelID));
+
+
+/////////////////////////////////////////////////////////////////////
+
+
+CREATE TABLE y_member(
+userName VARCHAR(24) NOT NULL,
+channelID INTEGER NOT NULL,
+registeryDate TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+PRIMARY KEY(userName, channelID),
+FOREIGN KEY (channelID) 
+REFERENCES channel(channelID),
+FOREIGN KEY (userName) 
+REFERENCES y_user(userName));
+
+
+///////////////////////////////////////////////////////////////////////////
+
+
+
+CREATE TABLE playlist(
+playlistID SERIAL PRIMARY KEY NOT NULL,
+userName VARCHAR(24) NOT NULL,
+pName VARCHAR(100) NOT NULL,
+status VARCHAR(7) DEFAULT 'Private',
+FOREIGN KEY (userName) 
+REFERENCES y_user(userName),
+CHECK(status in ('Private','Public')));
+
+
+//////////////////////////////////////////////////////////////////////////
+
+
+CREATE TABLE playlistVideo (
+videoID INTEGER NOT NULL,
+playlistID INTEGER NOT NULL,
+PRIMARY KEY(playlistID, videoID),
+FOREIGN KEY (videoID) 
+REFERENCES y_video(videoID),
+FOREIGN KEY (playlistID ) 
+REFERENCES playlist(playlistID));
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userChannel(cName, constructionDate, about, profilePhoto)
+AS SELECT cName, constructionDate, about, profilePhoto
+	FROM channel
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW adminChannel(creator, cName, constructionDate, about, profilePhoto)
+AS SELECT creator, cName, constructionDate, about, profilePhoto
+	FROM channel
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW adminPlaylist(pOwner, pName, status)
+AS SELECT userName, pName, status 
+FROM playlist 
+WHERE status = 'Private' 
+
+
+//////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userPlaylist(pName)
+AS SELECT pName 
+FROM playlist 
+WHERE status = 'Public' 
+
+
+//////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userVideo(vName, userName, uploadDate, description, duration, thumbnailPhoto)
+AS SELECT vName, userName, uploadDate, description, duration, thumbnailPhoto 
+FROM y_video 
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userVideoView(vName, viewNumber)
+AS SELECT vName, COUNT(*) 
+FROM y_videoView AS vv, y_video AS v
+WHERE v.videoID = vv.videoID
+GROUP BY v.videoID
+
+
+//////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userVideoLike(vName, likeNumber)
+AS SELECT vName, COUNT(*) 
+FROM y_videoView AS vv, y_video AS v
+WHERE v.videoID = vv.videoID AND vv.status = 'Like'
+GROUP BY v.videoID
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userVideoDisLike(vName, disLikeNumber)
+AS SELECT vName, COUNT(*) 
+FROM y_videoView AS vv, y_video AS v
+WHERE v.videoID = vv.videoID AND vv.status = 'DisLike'
+GROUP BY v.videoID
+
+
+///////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userVideoViewComment(vName, userName, vComment)
+AS SELECT v.vName, u.userName, co.description 
+FROM  y_video AS v, y_comment AS co, y_user AS u, y_videoViewComment AS vvc
+WHERE u.userName =  vvc.userName 
+	AND vvc.videoID = v.videoID 
+	AND vvc.commentID = co.commentID
+
+
+///////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userCommentView(cOwner, vName, description, viewNumber)
+AS SELECT vvc.userName, v.vName, co.description, coun.num 
+FROM y_commentView AS cv, y_comment AS co,
+	y_video AS v, y_videoViewComment AS vvc,
+	(SELECT commentID, COUNT(*) AS num FROM y_commentView GROUP BY commentID) AS coun
+WHERE co.commentID = cv.commentID
+	AND vvc.commentID = cv.commentID
+	AND cv.commentID = coun.commentID
+	AND vvc.videoID = v.videoID
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userCommentLike(cOwner, vName, description, likeNumber)
+AS SELECT vvc.userName, v.vName, co.description, coun.num 
+FROM y_commentView AS cv, y_comment AS co,
+	y_video AS v, y_videoViewComment AS vvc,
+	(SELECT commentID, COUNT(*) AS num 
+	 	FROM y_commentView 
+	 	WHERE  y_commentView.status = 'Like'
+	 	GROUP BY commentID) AS coun
+WHERE co.commentID = cv.commentID
+	AND vvc.commentID = cv.commentID
+	AND cv.commentID = coun.commentID
+	AND vvc.videoID = v.videoID
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW userCommentDisLike(cOwner, vName, description, likeNumber)
+AS SELECT vvc.userName, v.vName, co.description, coun.num 
+FROM y_commentView AS cv, y_comment AS co,
+	y_video AS v, y_videoViewComment AS vvc,
+	(SELECT commentID, COUNT(*) AS num 
+	 	FROM y_commentView 
+	 	WHERE  y_commentView.status = 'DisLike'
+	 	GROUP BY commentID) AS coun
+WHERE co.commentID = cv.commentID
+	AND vvc.commentID = cv.commentID
+	AND cv.commentID = coun.commentID
+	AND vvc.videoID = v.videoID
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE VIEW channelMember(cName, userName)
+AS SELECT ch.cName, mem.userName 
+FROM channel AS ch, y_member AS mem
+WHERE ch.channelID = mem.channelID
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+CREATE USER ordinary_user WITH PASSWORD 'jw8s0F4';
+CREATE ROLE ordinary_user;
+GRANT ordinary_user to ordinary_user
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+GRANT SELECT ON channelMember TO ordinary_user;
+GRANT SELECT ON userChannel TO ordinary_user;
+GRANT SELECT ON userCommentDisLike TO ordinary_user;
+GRANT SELECT ON userCommentLike TO ordinary_user;
+GRANT SELECT ON userCommentView TO ordinary_user;
+GRANT SELECT ON userPlaylist TO ordinary_user;
+GRANT SELECT ON userVideo TO ordinary_user;
+GRANT SELECT ON userVideoDisLike TO ordinary_user;
+GRANT SELECT ON userVideoLike TO ordinary_user;
+GRANT SELECT ON userVideoView TO ordinary_user;
+GRANT SELECT ON userVideoViewComment TO ordinary_user;
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+

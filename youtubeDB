@@ -1,0 +1,1172 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.3 (Ubuntu 13.3-1.pgdg20.04+1)
+-- Dumped by pg_dump version 13.3 (Ubuntu 13.3-1.pgdg20.04+1)
+
+-- Started on 2021-07-09 17:33:36 +0430
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 210 (class 1259 OID 16577)
+-- Name: channel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.channel (
+    channelid integer NOT NULL,
+    cname character varying(100) NOT NULL,
+    creator character varying(24) NOT NULL,
+    constructiondate timestamp without time zone NOT NULL,
+    about character varying(200) DEFAULT ''::character varying,
+    profilephoto integer DEFAULT 0
+);
+
+
+ALTER TABLE public.channel OWNER TO postgres;
+
+--
+-- TOC entry 217 (class 1259 OID 16664)
+-- Name: adminchannel; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.adminchannel AS
+ SELECT channel.creator,
+    channel.cname,
+    channel.constructiondate,
+    channel.about,
+    channel.profilephoto
+   FROM public.channel;
+
+
+ALTER TABLE public.adminchannel OWNER TO postgres;
+
+--
+-- TOC entry 214 (class 1259 OID 16632)
+-- Name: playlist; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.playlist (
+    playlistid integer NOT NULL,
+    username character varying(24) NOT NULL,
+    pname character varying(100) NOT NULL,
+    status character varying(7) DEFAULT 'Private'::character varying,
+    CONSTRAINT playlist_status_check CHECK (((status)::text = ANY ((ARRAY['Private'::character varying, 'Public'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.playlist OWNER TO postgres;
+
+--
+-- TOC entry 218 (class 1259 OID 16668)
+-- Name: adminplaylist; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.adminplaylist AS
+ SELECT playlist.username AS powner,
+    playlist.pname,
+    playlist.status
+   FROM public.playlist
+  WHERE ((playlist.status)::text = 'Private'::text);
+
+
+ALTER TABLE public.adminplaylist OWNER TO postgres;
+
+--
+-- TOC entry 209 (class 1259 OID 16575)
+-- Name: channel_channelid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.channel_channelid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.channel_channelid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3183 (class 0 OID 0)
+-- Dependencies: 209
+-- Name: channel_channelid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.channel_channelid_seq OWNED BY public.channel.channelid;
+
+
+--
+-- TOC entry 212 (class 1259 OID 16615)
+-- Name: y_member; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.y_member (
+    username character varying(24) NOT NULL,
+    channelid integer NOT NULL,
+    registerydate timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.y_member OWNER TO postgres;
+
+--
+-- TOC entry 228 (class 1259 OID 16715)
+-- Name: channelmember; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.channelmember AS
+ SELECT ch.cname,
+    mem.username
+   FROM public.channel ch,
+    public.y_member mem
+  WHERE (ch.channelid = mem.channelid);
+
+
+ALTER TABLE public.channelmember OWNER TO postgres;
+
+--
+-- TOC entry 211 (class 1259 OID 16600)
+-- Name: channelvideo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.channelvideo (
+    videoid integer NOT NULL,
+    channelid integer NOT NULL
+);
+
+
+ALTER TABLE public.channelvideo OWNER TO postgres;
+
+--
+-- TOC entry 213 (class 1259 OID 16630)
+-- Name: playlist_playlistid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.playlist_playlistid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.playlist_playlistid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3185 (class 0 OID 0)
+-- Dependencies: 213
+-- Name: playlist_playlistid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.playlist_playlistid_seq OWNED BY public.playlist.playlistid;
+
+
+--
+-- TOC entry 215 (class 1259 OID 16645)
+-- Name: playlistvideo; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.playlistvideo (
+    videoid integer NOT NULL,
+    playlistid integer NOT NULL
+);
+
+
+ALTER TABLE public.playlistvideo OWNER TO postgres;
+
+--
+-- TOC entry 216 (class 1259 OID 16660)
+-- Name: userchannel; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.userchannel AS
+ SELECT channel.cname,
+    channel.constructiondate,
+    channel.about,
+    channel.profilephoto
+   FROM public.channel;
+
+
+ALTER TABLE public.userchannel OWNER TO postgres;
+
+--
+-- TOC entry 205 (class 1259 OID 16453)
+-- Name: y_comment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.y_comment (
+    commentid integer NOT NULL,
+    submissiondate timestamp without time zone NOT NULL,
+    description character varying(500) NOT NULL
+);
+
+
+ALTER TABLE public.y_comment OWNER TO postgres;
+
+--
+-- TOC entry 207 (class 1259 OID 16538)
+-- Name: y_commentview; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.y_commentview (
+    commentid integer NOT NULL,
+    username character varying(24) NOT NULL,
+    viewdate timestamp without time zone NOT NULL,
+    status character varying(7) DEFAULT 'NoReact'::character varying,
+    CONSTRAINT y_commentview_status_check CHECK (((status)::text = ANY ((ARRAY['NoReact'::character varying, 'DisLike'::character varying, 'Like'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.y_commentview OWNER TO postgres;
+
+--
+-- TOC entry 202 (class 1259 OID 16421)
+-- Name: y_video; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.y_video (
+    videoid integer NOT NULL,
+    vname character varying(100) NOT NULL,
+    username character varying(24) NOT NULL,
+    uploaddate timestamp without time zone NOT NULL,
+    description character varying(200) DEFAULT 'We do not have a description yet'::character varying,
+    duration integer NOT NULL,
+    thumbnailphoto integer DEFAULT 0
+);
+
+
+ALTER TABLE public.y_video OWNER TO postgres;
+
+--
+-- TOC entry 206 (class 1259 OID 16462)
+-- Name: y_videoviewcomment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.y_videoviewcomment (
+    videoid integer NOT NULL,
+    username character varying(24) NOT NULL,
+    commentid integer NOT NULL
+);
+
+
+ALTER TABLE public.y_videoviewcomment OWNER TO postgres;
+
+--
+-- TOC entry 227 (class 1259 OID 16710)
+-- Name: usercommentdislike; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.usercommentdislike AS
+ SELECT vvc.username AS cowner,
+    v.vname,
+    co.description,
+    coun.num AS likenumber
+   FROM public.y_commentview cv,
+    public.y_comment co,
+    public.y_video v,
+    public.y_videoviewcomment vvc,
+    ( SELECT y_commentview.commentid,
+            count(*) AS num
+           FROM public.y_commentview
+          WHERE ((y_commentview.status)::text = 'DisLike'::text)
+          GROUP BY y_commentview.commentid) coun
+  WHERE ((co.commentid = cv.commentid) AND (vvc.commentid = cv.commentid) AND (cv.commentid = coun.commentid) AND (vvc.videoid = v.videoid));
+
+
+ALTER TABLE public.usercommentdislike OWNER TO postgres;
+
+--
+-- TOC entry 226 (class 1259 OID 16705)
+-- Name: usercommentlike; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.usercommentlike AS
+ SELECT vvc.username AS cowner,
+    v.vname,
+    co.description,
+    coun.num AS likenumber
+   FROM public.y_commentview cv,
+    public.y_comment co,
+    public.y_video v,
+    public.y_videoviewcomment vvc,
+    ( SELECT y_commentview.commentid,
+            count(*) AS num
+           FROM public.y_commentview
+          WHERE ((y_commentview.status)::text = 'Like'::text)
+          GROUP BY y_commentview.commentid) coun
+  WHERE ((co.commentid = cv.commentid) AND (vvc.commentid = cv.commentid) AND (cv.commentid = coun.commentid) AND (vvc.videoid = v.videoid));
+
+
+ALTER TABLE public.usercommentlike OWNER TO postgres;
+
+--
+-- TOC entry 225 (class 1259 OID 16696)
+-- Name: usercommentview; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.usercommentview AS
+ SELECT vvc.username AS cowner,
+    v.vname,
+    co.description,
+    coun.num AS viewnumber
+   FROM public.y_commentview cv,
+    public.y_comment co,
+    public.y_video v,
+    public.y_videoviewcomment vvc,
+    ( SELECT y_commentview.commentid,
+            count(*) AS num
+           FROM public.y_commentview
+          GROUP BY y_commentview.commentid) coun
+  WHERE ((co.commentid = cv.commentid) AND (vvc.commentid = cv.commentid) AND (cv.commentid = coun.commentid) AND (vvc.videoid = v.videoid));
+
+
+ALTER TABLE public.usercommentview OWNER TO postgres;
+
+--
+-- TOC entry 219 (class 1259 OID 16672)
+-- Name: userplaylist; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.userplaylist AS
+ SELECT playlist.pname
+   FROM public.playlist
+  WHERE ((playlist.status)::text = 'Public'::text);
+
+
+ALTER TABLE public.userplaylist OWNER TO postgres;
+
+--
+-- TOC entry 220 (class 1259 OID 16676)
+-- Name: uservideo; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.uservideo AS
+ SELECT y_video.vname,
+    y_video.username,
+    y_video.uploaddate,
+    y_video.description,
+    y_video.duration,
+    y_video.thumbnailphoto
+   FROM public.y_video;
+
+
+ALTER TABLE public.uservideo OWNER TO postgres;
+
+--
+-- TOC entry 223 (class 1259 OID 16688)
+-- Name: uservideodislike; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.uservideodislike AS
+SELECT
+    NULL::character varying(100) AS vname,
+    NULL::bigint AS dislikenumber;
+
+
+ALTER TABLE public.uservideodislike OWNER TO postgres;
+
+--
+-- TOC entry 222 (class 1259 OID 16684)
+-- Name: uservideolike; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.uservideolike AS
+SELECT
+    NULL::character varying(100) AS vname,
+    NULL::bigint AS likenumber;
+
+
+ALTER TABLE public.uservideolike OWNER TO postgres;
+
+--
+-- TOC entry 221 (class 1259 OID 16680)
+-- Name: uservideoview; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.uservideoview AS
+SELECT
+    NULL::character varying(100) AS vname,
+    NULL::bigint AS viewnumber;
+
+
+ALTER TABLE public.uservideoview OWNER TO postgres;
+
+--
+-- TOC entry 200 (class 1259 OID 16413)
+-- Name: y_user; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.y_user (
+    username character varying(24) NOT NULL,
+    userpassword character varying(20) NOT NULL,
+    registerydate timestamp without time zone NOT NULL,
+    prfilepicture integer DEFAULT 0,
+    email character varying(60) NOT NULL
+);
+
+
+ALTER TABLE public.y_user OWNER TO postgres;
+
+--
+-- TOC entry 224 (class 1259 OID 16692)
+-- Name: uservideoviewcomment; Type: VIEW; Schema: public; Owner: postgres
+--
+
+CREATE VIEW public.uservideoviewcomment AS
+ SELECT v.vname,
+    u.username,
+    co.description AS vcomment
+   FROM public.y_video v,
+    public.y_comment co,
+    public.y_user u,
+    public.y_videoviewcomment vvc
+  WHERE (((u.username)::text = (vvc.username)::text) AND (vvc.videoid = v.videoid) AND (vvc.commentid = co.commentid));
+
+
+ALTER TABLE public.uservideoviewcomment OWNER TO postgres;
+
+--
+-- TOC entry 204 (class 1259 OID 16451)
+-- Name: y_comment_commentid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.y_comment_commentid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.y_comment_commentid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3196 (class 0 OID 0)
+-- Dependencies: 204
+-- Name: y_comment_commentid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.y_comment_commentid_seq OWNED BY public.y_comment.commentid;
+
+
+--
+-- TOC entry 208 (class 1259 OID 16555)
+-- Name: y_replycomment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.y_replycomment (
+    replycomment integer NOT NULL,
+    maincomment integer NOT NULL,
+    username character varying(24) NOT NULL
+);
+
+
+ALTER TABLE public.y_replycomment OWNER TO postgres;
+
+--
+-- TOC entry 201 (class 1259 OID 16419)
+-- Name: y_video_videoid_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.y_video_videoid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.y_video_videoid_seq OWNER TO postgres;
+
+--
+-- TOC entry 3197 (class 0 OID 0)
+-- Dependencies: 201
+-- Name: y_video_videoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.y_video_videoid_seq OWNED BY public.y_video.videoid;
+
+
+--
+-- TOC entry 203 (class 1259 OID 16434)
+-- Name: y_videoview; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.y_videoview (
+    videoid integer NOT NULL,
+    username character varying(24) NOT NULL,
+    viewdate timestamp without time zone NOT NULL,
+    status character varying(7) DEFAULT 'NoReact'::character varying,
+    CONSTRAINT y_videoview_status_check CHECK (((status)::text = ANY ((ARRAY['NoReact'::character varying, 'DisLike'::character varying, 'Like'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.y_videoview OWNER TO postgres;
+
+--
+-- TOC entry 2970 (class 2604 OID 16580)
+-- Name: channel channelid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.channel ALTER COLUMN channelid SET DEFAULT nextval('public.channel_channelid_seq'::regclass);
+
+
+--
+-- TOC entry 2973 (class 2604 OID 16635)
+-- Name: playlist playlistid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.playlist ALTER COLUMN playlistid SET DEFAULT nextval('public.playlist_playlistid_seq'::regclass);
+
+
+--
+-- TOC entry 2967 (class 2604 OID 16456)
+-- Name: y_comment commentid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_comment ALTER COLUMN commentid SET DEFAULT nextval('public.y_comment_commentid_seq'::regclass);
+
+
+--
+-- TOC entry 2962 (class 2604 OID 16424)
+-- Name: y_video videoid; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_video ALTER COLUMN videoid SET DEFAULT nextval('public.y_video_videoid_seq'::regclass);
+
+
+--
+-- TOC entry 3172 (class 0 OID 16577)
+-- Dependencies: 210
+-- Data for Name: channel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.channel (channelid, cname, creator, constructiondate, about, profilephoto) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3173 (class 0 OID 16600)
+-- Dependencies: 211
+-- Data for Name: channelvideo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.channelvideo (videoid, channelid) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3176 (class 0 OID 16632)
+-- Dependencies: 214
+-- Data for Name: playlist; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.playlist (playlistid, username, pname, status) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3177 (class 0 OID 16645)
+-- Dependencies: 215
+-- Data for Name: playlistvideo; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.playlistvideo (videoid, playlistid) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3167 (class 0 OID 16453)
+-- Dependencies: 205
+-- Data for Name: y_comment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.y_comment (commentid, submissiondate, description) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3169 (class 0 OID 16538)
+-- Dependencies: 207
+-- Data for Name: y_commentview; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.y_commentview (commentid, username, viewdate, status) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3174 (class 0 OID 16615)
+-- Dependencies: 212
+-- Data for Name: y_member; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.y_member (username, channelid, registerydate) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3170 (class 0 OID 16555)
+-- Dependencies: 208
+-- Data for Name: y_replycomment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.y_replycomment (replycomment, maincomment, username) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3162 (class 0 OID 16413)
+-- Dependencies: 200
+-- Data for Name: y_user; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.y_user (username, userpassword, registerydate, prfilepicture, email) FROM stdin;
+javid	123456	2021-07-07 12:06:00.567	5	javid@gmail.com
+wlntxjosnrxavaumrtybrteb	rblonafwva63209	2021-07-07 15:06:15.916892	7301182	csylxwsukrdsnineyvielfkoxfbzyg@dzrpruqjrvjwynq.bryskvxweq
+mkfxbysgvimvrzzbpjmfpswq	uvfikmzdqf116099	2021-07-07 15:23:28.619087	1184006	sfpnprvcqvdbkvdtcoeuqlvvutlrlk@jdnmgyvzgyiilpu.jpkipettid
+kolcccwvxbubkezetrxsczjp	jmtexvkjbz293018	2021-07-07 15:23:49.965166	7918896	oyhkhgkdlcsavlhwhpadpsxapdmoqf@xqskhvlnuohwdcd.alfeqkkish
+mohdkmkmkzadioyzceyrskgg	sarxmnunyn143062	2021-07-07 15:25:13.094218	1806215	vvskarxcnzvcxesmxezymyitfjtolk@orbesxyxhfhyjgj.acfrwuopwu
+odltidencdrlytqgnowjvqjr	lucrrrqkxx163022	2021-07-07 15:25:53.658908	2240706	stdcvitgmgqwptiqkyqzvbvshlyzbm@ddpsxpmjjvalflw.umyddfyrpe
+vumvwilbqdbuvxdxjoclkddn	ovwfzdkxpk192835	2021-07-07 15:26:15.736724	8071843	efrwkdebwidbujxovsxtlmieoskwyf@rqyvtjuzuykcmri.idfkpdswwj
+rpzubqczhegntyxfyqrhuems	vbjqklbqoj122654	2021-07-07 15:30:50.462652	8639140	upaccnubbrjossvzeknsvtpmjcmuor@bduykpuopmldjrj.eoewhzboxk
+crtmbudjmnynszvstgcjfsoz	wvcjnxicxs178879	2021-07-07 15:35:36.13748	3614700	sehytkcssblpooomydnhizaalcrcom@mhkqmoxuzwjksoo.xgyrobzuor
+nnkfxeaobqqqylmvofrjubhm	mzvrehhosl169065	2021-07-07 15:39:31.216063	4329606	gafgpskgsbedjwraqcqncbzcynlpif@zrdlwyycujjzuvf.burunjeelk
+eniskgmgxemdpvpuoyrgfcgi	napykszzeb73514	2021-07-07 15:41:37.014516	1749631	gwlxgtkhsjvstzmywicmfuiaddzlfy@yrapngkaotdhrxl.ysbtmbqjky
+ewpxpivxiluisbrltgcllwip	izmhkmgjgo86495	2021-07-07 15:42:20.846986	6843435	opfoapirmajejxkvfruzvixguftwjy@mcglgxtkofbflym.ptdrkbwgzx
+zzcyvkywbnonkbmrielynlea	eretcgbwsx119752	2021-07-07 15:43:08.569323	8257338	hvcifyahgrmfsonbospitgxtgvxtmc@jfmyxqpjypnzcdw.hccirescla
+preawdgixjjyhjqbsvmyzqmz	hfyabcvguz221662	2021-07-07 15:47:16.264687	5193608	bhqbwzdagueiclwkshhwekbqvzsiva@gcuzfibmejzdaat.uhmvpupvnc
+tflsiyamsfxywinnggwrngqr	tmrngwprlx294829	2021-07-07 15:48:41.497615	1506847	lfuctchupmwnhubievlsysxxvwunbv@lrdcmslavjbwitb.lsuvwoudev
+jukfbewroskckxsduotoaogp	idbbjlllgi54436	2021-07-07 15:49:54.643006	202262	ghqyycynhaxakoijmddbbnadgyhzwq@zznwyfbhlelhlpm.wrqvsmdusr
+zcakipewseewtrbmeylvlsci	bfzbhntmwc6547	2021-07-07 16:18:36.861045	3323980	ohwyvbhlthdxsithnjvlaezbpafmtl@ydrmgrpurrzmomu.gdrkyezpfi
+pjamzbfugqpfuyelhfqcnfzp	uvvqryyyaq28446	2021-07-07 16:19:21.309702	4191450	gpyxixuxcomewrnlfjvkokfyyjjcbm@xwsiltaeysyrfqc.lauadknseb
+afjmzvhkncdxkfsshzifpcde	jgpeorwvcj239146	2021-07-07 16:19:44.074401	8888896	kferadofaklqyfyeznyqbxpvtttbwe@hjbnlbqtrimtlmd.rywhrexsgy
+qnyohxvidqilwbnqycrenwot	aasrmcamcr199773	2021-07-07 16:20:15.612611	1328300	slfyqrgkxpeeuetefxnmwpueuytibp@gevxbextvxnyznt.oqmnzvnkuu
+\.
+
+
+--
+-- TOC entry 3164 (class 0 OID 16421)
+-- Dependencies: 202
+-- Data for Name: y_video; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.y_video (videoid, vname, username, uploaddate, description, duration, thumbnailphoto) FROM stdin;
+2	wxhlye	javid	2021-07-07 15:26:15.782609	nwiimtunofjmrmuypwlgpvquexwmznajcxckauiusoipcsumjywijsjvhwcmkwdfggxtwygjhipypnfqrolcvofyzpoiyrovpkgwhmwlzurxlykztwnkofrkwxuvlqksgzifzkwmelunneprrwbhhpsonuzreunlxlnpiscdwleaxpjhyuissjhjgktxyxuxknrhxpto	719997242	827
+3	ifsfxu	javid	2021-07-07 15:30:50.493095	hxsadysaugdvwpymmzwcfqtgyyghcrthulxzjjozkuqbchfmxvszmbrrtfbcevwdnumsaoyejqmpwhriizkjjookpegtmfjzfyrbauiudwuebqrbkhyfsyxclfjryvvtgkljjhvjyizkbwcnwgxyklgbjgmpuhcrsonjvhypxanezylmzaubqqqpzwmyeivbsqrgyjwc	605071721	7
+4	yuaiiz	javid	2021-07-07 15:35:36.176353	rtkxzbrweukidfgnmisuasjlopyxvjflrjwmresejggrslmmklajelqvfrtyvvxwlqgytaltclmigoadiabwfngiozvmucqtkjlgekmlmwszkwvmlivtkftzywucqplrryhjyqirxudwublumdthxcjogamebfovtbtudgesgzgwmcsudswelhgxzztxpfpzddacrtws	432995456	114
+5	aaotce	javid	2021-07-07 15:39:31.268971	nowxnwgwrxbnftdtqjvzwqntalgvclbpdyekcfmuluvjodgfyegzkeiqtvamzcbxxafhpncyvnilslvilywunrvwbxfkwjyunreejysvgpyldzqmrzfrpttihuwynolfbexbltsuwajolispbesgnjdesjlalmviruekdhajofvhajuvxqtlrbwsxfajkgkjzxbilgvc	756366860	842
+6	cwoiml	javid	2021-07-07 15:41:37.054503	cedkbqgqzomjygswqalhkvucljlfeonmdkcknfkxklmlcyjiwnodrrvaankkkersqhzqkcjjvwymynnmtuotcseabdpewwkxfscrhjinligckqptrohjeoavccvmwavihltignjlvcloyaymxwpbcmkkhfmwxdnfovcfvzcwlrajzhugupdqrqmnumverhpgtwaojbrx	501222372	281
+7	efhive	javid	2021-07-07 15:42:20.898659	uidyyxtzkotjkbkkebtbjqxixguejykqdhwcsbvdtrrqonngmsdthsdqvdmdlcbzlyphvghundspktiwrmuynoghwmbllgznbfonyhgoofoqtnbjsqxcijegytuwaylsnsrkvjvvwzvhgajbvwhfvomtdanlfoknmgtmjmzktekyeojkrwohgbljgokrrcucikifvime	610338586	351
+8	pytxig	javid	2021-07-07 15:43:08.618046	nzblnjxhryniyatffcxqlcpxbpgxfyikpwfkwezlvvleftceplpemgrprdagbusmgpmizavljvvqfacegsweytdicwnfbchlsfhglspgnsvlxelhncbrdvhbhlisasmjviirpeyarfucbfupiepruwnmadgqvhagddemicjzmihrsrakzxoodourzbphvffhmrchhoii	537542428	377
+9	gfieeu	javid	2021-07-07 15:47:16.304886	qbqoqoxxevnhfrztgpppipanvljxzszyvfacevxajrufurascwbqifoacpdisbmycviillnzektnuslnadcgocneqbmscnqjslrynblckqttfgwcnpemqwhevxoehavugvkmkfhirpzhobmmlvwtgmxpbsgpxfthdvyuxeadepimiwnywsoocwwqzlyptygltzelvtki	636002757	296
+10	gfujjs	javid	2021-07-07 15:48:41.529979	dpuuohixsergnwjvexaeyqbcinqwmqwqsvoxwqlqfvgveokbtkgmmjyiuhxuhotkdccfmhreqqvwzhheymjicxaplxpcgzicfnnujqutvcnubivacnmwtdkwuhupnoxomuferqaiyjelnqqmffttxpellnfngxqnbmfzgkdppmjjnygrlbrfljsoqafvkfcatsqbzrny	401688748	706
+11	bnuwsq	javid	2021-07-07 15:49:54.67595	cujwxxibdjtptibipviyrmyvgcloeuoitmwhsisgponquqqzgruybtjuymolouiugrbrbpmnxoffhpcrllhprfpefherxkdjeutoqqctljmyjuinmhobkezrsepydwzpwlvrukiegfwjcoiaiowuvihlsxtwplmnjenmqujnkgechtswpgteaonxoptutwkuotjoqbmp	481819003	265
+12	mzsknw	javid	2021-07-07 16:18:36.89728	wkqyrsyhjkrsmuemhriufnmimcxowzhklxfhngotkolzelyaxzjygqzbkujvrbfvypvmeyntdbozlxosgfwxrgmkeuwsowohootvfohhgptnsiffngebbobilrpyybkwzgawzbpwrzroitncvsjmyxbfgttvgzzanpxnvnzsabugxticsfgrjqopytmzjplafnnjejoh	312302039	584
+13	xbopih	javid	2021-07-07 16:19:21.358315	aljubdmyisjkaqlprqxknciqcfilpcgtkkeryzggmuyekhmzrmzsgrcgfrrarmrrmtqdiuhhyrcxldokbtliugqlembnjasuwopvbhehzdmqxkhcvaaamleqfknrbozmotrmwgpdvpmbpmlqabktlecvemnpeqfssxaandctdwcmgkzuhnuewhxetkspvjufamyexpaj	651394806	295
+14	jjvhwx	javid	2021-07-07 16:19:44.109809	upfvjrnwobmijckrjdsfyqtbhnpxyfafucjxkqlhgenglqwnfloeweoozyzmddgsavasebjgupihtqggcjocjmuklizkyseeieksdsvqjbhabtgbjivaxnxvolyougqrtinaczdtzfaymtvgmgedkbtvrdrebzaevtosgiafodneqmxuxrnosuegxkxbvtjzxdvhboyw	459441781	743
+15	ouzmlj	javid	2021-07-07 16:20:15.654306	kemaxetxiwzxnlrqizbgvazgmueaxemuqizpzvkqfgwtaeuiyewbelexioohyvgmzfqjzvhvlzkuwgxslxsgqgwirvqsenwyitdzfveskrwkkqxaplznsmumwtygejqviavtyxewgmnpxzpqjolvlftgphdtlyvajcfmbwbrbhmhvzzfeokwdyfpdudmkdexopppdudp	892267852	216
+\.
+
+
+--
+-- TOC entry 3165 (class 0 OID 16434)
+-- Dependencies: 203
+-- Data for Name: y_videoview; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.y_videoview (videoid, username, viewdate, status) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3168 (class 0 OID 16462)
+-- Dependencies: 206
+-- Data for Name: y_videoviewcomment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.y_videoviewcomment (videoid, username, commentid) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3198 (class 0 OID 0)
+-- Dependencies: 209
+-- Name: channel_channelid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.channel_channelid_seq', 1, false);
+
+
+--
+-- TOC entry 3199 (class 0 OID 0)
+-- Dependencies: 213
+-- Name: playlist_playlistid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.playlist_playlistid_seq', 1, false);
+
+
+--
+-- TOC entry 3200 (class 0 OID 0)
+-- Dependencies: 204
+-- Name: y_comment_commentid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.y_comment_commentid_seq', 1, false);
+
+
+--
+-- TOC entry 3201 (class 0 OID 0)
+-- Dependencies: 201
+-- Name: y_video_videoid_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.y_video_videoid_seq', 15, true);
+
+
+--
+-- TOC entry 2991 (class 2606 OID 16584)
+-- Name: channel channel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.channel
+    ADD CONSTRAINT channel_pkey PRIMARY KEY (channelid);
+
+
+--
+-- TOC entry 2993 (class 2606 OID 16604)
+-- Name: channelvideo channelvideo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.channelvideo
+    ADD CONSTRAINT channelvideo_pkey PRIMARY KEY (videoid);
+
+
+--
+-- TOC entry 2997 (class 2606 OID 16639)
+-- Name: playlist playlist_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.playlist
+    ADD CONSTRAINT playlist_pkey PRIMARY KEY (playlistid);
+
+
+--
+-- TOC entry 2999 (class 2606 OID 16649)
+-- Name: playlistvideo playlistvideo_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.playlistvideo
+    ADD CONSTRAINT playlistvideo_pkey PRIMARY KEY (playlistid, videoid);
+
+
+--
+-- TOC entry 2983 (class 2606 OID 16461)
+-- Name: y_comment y_comment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_comment
+    ADD CONSTRAINT y_comment_pkey PRIMARY KEY (commentid);
+
+
+--
+-- TOC entry 2987 (class 2606 OID 16544)
+-- Name: y_commentview y_commentview_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_commentview
+    ADD CONSTRAINT y_commentview_pkey PRIMARY KEY (username, commentid);
+
+
+--
+-- TOC entry 2995 (class 2606 OID 16619)
+-- Name: y_member y_member_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_member
+    ADD CONSTRAINT y_member_pkey PRIMARY KEY (username, channelid);
+
+
+--
+-- TOC entry 2989 (class 2606 OID 16559)
+-- Name: y_replycomment y_replycomment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_replycomment
+    ADD CONSTRAINT y_replycomment_pkey PRIMARY KEY (username, replycomment, maincomment);
+
+
+--
+-- TOC entry 2977 (class 2606 OID 16418)
+-- Name: y_user y_user_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_user
+    ADD CONSTRAINT y_user_pkey PRIMARY KEY (username);
+
+
+--
+-- TOC entry 2979 (class 2606 OID 16428)
+-- Name: y_video y_video_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_video
+    ADD CONSTRAINT y_video_pkey PRIMARY KEY (videoid);
+
+
+--
+-- TOC entry 2981 (class 2606 OID 16440)
+-- Name: y_videoview y_videoview_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_videoview
+    ADD CONSTRAINT y_videoview_pkey PRIMARY KEY (username, videoid);
+
+
+--
+-- TOC entry 2985 (class 2606 OID 16466)
+-- Name: y_videoviewcomment y_videoviewcomment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_videoviewcomment
+    ADD CONSTRAINT y_videoviewcomment_pkey PRIMARY KEY (commentid);
+
+
+--
+-- TOC entry 3154 (class 2618 OID 16683)
+-- Name: uservideoview _RETURN; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE VIEW public.uservideoview AS
+ SELECT v.vname,
+    count(*) AS viewnumber
+   FROM public.y_videoview vv,
+    public.y_video v
+  WHERE (v.videoid = vv.videoid)
+  GROUP BY v.videoid;
+
+
+--
+-- TOC entry 3155 (class 2618 OID 16687)
+-- Name: uservideolike _RETURN; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE VIEW public.uservideolike AS
+ SELECT v.vname,
+    count(*) AS likenumber
+   FROM public.y_videoview vv,
+    public.y_video v
+  WHERE ((v.videoid = vv.videoid) AND ((vv.status)::text = 'Like'::text))
+  GROUP BY v.videoid;
+
+
+--
+-- TOC entry 3156 (class 2618 OID 16691)
+-- Name: uservideodislike _RETURN; Type: RULE; Schema: public; Owner: postgres
+--
+
+CREATE OR REPLACE VIEW public.uservideodislike AS
+ SELECT v.vname,
+    count(*) AS dislikenumber
+   FROM public.y_videoview vv,
+    public.y_video v
+  WHERE ((v.videoid = vv.videoid) AND ((vv.status)::text = 'DisLike'::text))
+  GROUP BY v.videoid;
+
+
+--
+-- TOC entry 3011 (class 2606 OID 16585)
+-- Name: channel channel_creator_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.channel
+    ADD CONSTRAINT channel_creator_fkey FOREIGN KEY (creator) REFERENCES public.y_user(username);
+
+
+--
+-- TOC entry 3013 (class 2606 OID 16610)
+-- Name: channelvideo channelvideo_channelid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.channelvideo
+    ADD CONSTRAINT channelvideo_channelid_fkey FOREIGN KEY (channelid) REFERENCES public.channel(channelid);
+
+
+--
+-- TOC entry 3012 (class 2606 OID 16605)
+-- Name: channelvideo channelvideo_videoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.channelvideo
+    ADD CONSTRAINT channelvideo_videoid_fkey FOREIGN KEY (videoid) REFERENCES public.y_video(videoid);
+
+
+--
+-- TOC entry 3016 (class 2606 OID 16640)
+-- Name: playlist playlist_username_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.playlist
+    ADD CONSTRAINT playlist_username_fkey FOREIGN KEY (username) REFERENCES public.y_user(username);
+
+
+--
+-- TOC entry 3018 (class 2606 OID 16655)
+-- Name: playlistvideo playlistvideo_playlistid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.playlistvideo
+    ADD CONSTRAINT playlistvideo_playlistid_fkey FOREIGN KEY (playlistid) REFERENCES public.playlist(playlistid);
+
+
+--
+-- TOC entry 3017 (class 2606 OID 16650)
+-- Name: playlistvideo playlistvideo_videoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.playlistvideo
+    ADD CONSTRAINT playlistvideo_videoid_fkey FOREIGN KEY (videoid) REFERENCES public.y_video(videoid);
+
+
+--
+-- TOC entry 3006 (class 2606 OID 16545)
+-- Name: y_commentview y_commentview_commentid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_commentview
+    ADD CONSTRAINT y_commentview_commentid_fkey FOREIGN KEY (commentid) REFERENCES public.y_comment(commentid);
+
+
+--
+-- TOC entry 3007 (class 2606 OID 16550)
+-- Name: y_commentview y_commentview_username_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_commentview
+    ADD CONSTRAINT y_commentview_username_fkey FOREIGN KEY (username) REFERENCES public.y_user(username);
+
+
+--
+-- TOC entry 3014 (class 2606 OID 16620)
+-- Name: y_member y_member_channelid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_member
+    ADD CONSTRAINT y_member_channelid_fkey FOREIGN KEY (channelid) REFERENCES public.channel(channelid);
+
+
+--
+-- TOC entry 3015 (class 2606 OID 16625)
+-- Name: y_member y_member_username_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_member
+    ADD CONSTRAINT y_member_username_fkey FOREIGN KEY (username) REFERENCES public.y_user(username);
+
+
+--
+-- TOC entry 3009 (class 2606 OID 16565)
+-- Name: y_replycomment y_replycomment_maincomment_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_replycomment
+    ADD CONSTRAINT y_replycomment_maincomment_fkey FOREIGN KEY (maincomment) REFERENCES public.y_comment(commentid);
+
+
+--
+-- TOC entry 3008 (class 2606 OID 16560)
+-- Name: y_replycomment y_replycomment_replycomment_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_replycomment
+    ADD CONSTRAINT y_replycomment_replycomment_fkey FOREIGN KEY (replycomment) REFERENCES public.y_comment(commentid);
+
+
+--
+-- TOC entry 3010 (class 2606 OID 16570)
+-- Name: y_replycomment y_replycomment_username_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_replycomment
+    ADD CONSTRAINT y_replycomment_username_fkey FOREIGN KEY (username) REFERENCES public.y_user(username);
+
+
+--
+-- TOC entry 3000 (class 2606 OID 16429)
+-- Name: y_video y_video_username_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_video
+    ADD CONSTRAINT y_video_username_fkey FOREIGN KEY (username) REFERENCES public.y_user(username);
+
+
+--
+-- TOC entry 3002 (class 2606 OID 16446)
+-- Name: y_videoview y_videoview_username_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_videoview
+    ADD CONSTRAINT y_videoview_username_fkey FOREIGN KEY (username) REFERENCES public.y_user(username);
+
+
+--
+-- TOC entry 3001 (class 2606 OID 16441)
+-- Name: y_videoview y_videoview_videoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_videoview
+    ADD CONSTRAINT y_videoview_videoid_fkey FOREIGN KEY (videoid) REFERENCES public.y_video(videoid);
+
+
+--
+-- TOC entry 3005 (class 2606 OID 16477)
+-- Name: y_videoviewcomment y_videoviewcomment_commentid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_videoviewcomment
+    ADD CONSTRAINT y_videoviewcomment_commentid_fkey FOREIGN KEY (commentid) REFERENCES public.y_comment(commentid);
+
+
+--
+-- TOC entry 3004 (class 2606 OID 16472)
+-- Name: y_videoviewcomment y_videoviewcomment_username_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_videoviewcomment
+    ADD CONSTRAINT y_videoviewcomment_username_fkey FOREIGN KEY (username) REFERENCES public.y_user(username);
+
+
+--
+-- TOC entry 3003 (class 2606 OID 16467)
+-- Name: y_videoviewcomment y_videoviewcomment_videoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.y_videoviewcomment
+    ADD CONSTRAINT y_videoviewcomment_videoid_fkey FOREIGN KEY (videoid) REFERENCES public.y_video(videoid);
+
+
+--
+-- TOC entry 3184 (class 0 OID 0)
+-- Dependencies: 228
+-- Name: TABLE channelmember; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.channelmember TO ordinary_user;
+
+
+--
+-- TOC entry 3186 (class 0 OID 0)
+-- Dependencies: 216
+-- Name: TABLE userchannel; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.userchannel TO ordinary_user;
+
+
+--
+-- TOC entry 3187 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: TABLE usercommentdislike; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.usercommentdislike TO ordinary_user;
+
+
+--
+-- TOC entry 3188 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: TABLE usercommentlike; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.usercommentlike TO ordinary_user;
+
+
+--
+-- TOC entry 3189 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: TABLE usercommentview; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.usercommentview TO ordinary_user;
+
+
+--
+-- TOC entry 3190 (class 0 OID 0)
+-- Dependencies: 219
+-- Name: TABLE userplaylist; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.userplaylist TO ordinary_user;
+
+
+--
+-- TOC entry 3191 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: TABLE uservideo; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.uservideo TO ordinary_user;
+
+
+--
+-- TOC entry 3192 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: TABLE uservideodislike; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.uservideodislike TO ordinary_user;
+
+
+--
+-- TOC entry 3193 (class 0 OID 0)
+-- Dependencies: 222
+-- Name: TABLE uservideolike; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.uservideolike TO ordinary_user;
+
+
+--
+-- TOC entry 3194 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: TABLE uservideoview; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.uservideoview TO ordinary_user;
+
+
+--
+-- TOC entry 3195 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: TABLE uservideoviewcomment; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT ON TABLE public.uservideoviewcomment TO ordinary_user;
+
+
+-- Completed on 2021-07-09 17:33:36 +0430
+
+--
+-- PostgreSQL database dump complete
+--
+
