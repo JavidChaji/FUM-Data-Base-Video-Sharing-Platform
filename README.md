@@ -26,9 +26,9 @@ Ferdowsi University of Mashhad Data Base Video Sharing Platform
 [contributors-url]: https://github.com/javidchaji/FUM-Data-Base-Video-Sharing-Platform/graphs/contributors
 
 <!-- Forks -->
-[forks-shield]: https://img.shields.io/github/forks/javidchaji/FUM-Web-Programming-Hotel-Search-UI.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/javidchaji/FUM-Data-Base-Video-Sharing-Platform.svg?style=for-the-badge
 
-[forks-url]: https://github.com/javidchaji/FUM-Web-Programming-Hotel-Search-UI/network/members
+[forks-url]: https://github.com/javidchaji/FUM-Data-Base-Video-Sharing-Platform/network/members
 
 
 <!-- Stars -->
